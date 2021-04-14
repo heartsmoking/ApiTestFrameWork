@@ -17,6 +17,9 @@ import jsonpath
 from core.functions import *
 from db_operate.mysql_operate import MySQLOperate
 from db_operate.redis_operate import RedisOperate
+# 移除InsecureRequestWarning
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 
@@ -28,9 +31,9 @@ class Test(unittest.TestCase):
     #全局变量池
     saves = {}
     #识别${key}的正则表达式
-    EXPR = '\$\{(.*?)\}'
+    EXPR = r'\$\{(.*?)\}'
     #识别函数助手
-    FUNC_EXPR = '__.*?\(.*?\)'
+    FUNC_EXPR = r'__.*?\(.*?\)'
 
     def save_date(self,source,key,jexpr):
         '''
@@ -146,12 +149,12 @@ class Test(unittest.TestCase):
         redis_db_connect = None
         res = None
         # 判断数据库类型,暂时只有mysql,redis
-        if dbtype.lower() == "mysql":
-            db_connect = MySQLOperate(db)
-        elif dbtype.lower() == "redis":
-            redis_db_connect = RedisOperate(db)
-        else:
-            pass
+        # if dbtype.lower() == "mysql":
+        #     db_connect = MySQLOperate(db)
+        # elif dbtype.lower() == "redis":
+        #     redis_db_connect = RedisOperate(db)
+        # else:
+        #     pass
 
         if db_connect:
             self.execute_setup_sql(db_connect,setup_sql)
@@ -186,7 +189,10 @@ class Test(unittest.TestCase):
                 else:
                     actual = re.findall(expr,res.text)[0]
                 expect = ver.split("=")[1]
+                actual = str(actual).strip() if actual else actual
+                expect = str(expect).strip() if expect else expect
                 self.request.assertEquals(actual, expect)
+                # self.assertEqual(actual, expect)
 
         if db_connect:
             # 执行teardown_sql
