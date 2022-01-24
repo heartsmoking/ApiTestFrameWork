@@ -1,16 +1,16 @@
 #!/user/bin/env python
 #coding=utf-8
 '''
-@project : my_rf
-@author  : djcps
+@project : ApiTestFrameWork
+@author  : ZhaoFeng
 #@file   : test_case.py
 #@ide    : PyCharm
 #@time   : 2019-05-28 12:37:01
 '''
-#coding=utf-8
 
-import unittest
-from ddt import *
+import pytest
+from ast import literal_eval
+from typing import Any, Union
 from core.readExcel import *
 from core.testBase import *
 import jsonpath
@@ -22,10 +22,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-
-@ddt
-class Test(unittest.TestCase):
-
+class Test():
     api_data = read_excel()
 
     #全局变量池
@@ -35,7 +32,7 @@ class Test(unittest.TestCase):
     #识别函数助手
     FUNC_EXPR = r'__.*?\(.*?\)'
 
-    def save_date(self,source,key,jexpr):
+    def save_data(self,source,key,jexpr):
         '''
         提取参数并保存至全局变量池
         :param source: 目标字符串
@@ -67,7 +64,7 @@ class Test(unittest.TestCase):
             fuc = func.split('__')[1]
             fuc_name = fuc.split("(")[0]
             fuc = fuc.replace(fuc_name,fuc_name.lower())
-            value = eval(fuc)
+            value = literal_eval(fuc)
             string = string.replace(func,str(value))
         return string
 
@@ -117,20 +114,13 @@ class Test(unittest.TestCase):
             self.saves[key] = value
             logger.info("保存 {}=>{} 到全局变量池".format(key, value))
 
+    # def setup_class(self):
+    #     self.request = BaseTest()
 
-    @classmethod
-    def setUpClass(cls):
-        # 实例化测试基类，自带cookie保持
-        cls.request = BaseTest()
-
-
-    @classmethod
-    def tearDownClass(cls):
-        pass
-
-    @data(*api_data)
-    @unpack
-    def test_(self,descrption,url,method,headers,cookies,params,body,file,verify,saves,dbtype,db,setup_sql,teardown_sql):
+    param_names = "descrption,url,method,headers,cookies,params,body,file,verify,saves,dbtype,db,setup_sql,teardown_sql"
+    names = [x[0] for x in api_data]
+    @pytest.mark.parametrize(param_names,api_data,ids=names)
+    def test_(self,descrption,url,method,headers,cookies,params,body,file,verify,saves,dbtype,db,setup_sql,teardown_sql,Request):
         logger.info("用例描述====>"+descrption)
         url = self.build_param(url)
         headers = self.build_param(headers)
@@ -139,11 +129,11 @@ class Test(unittest.TestCase):
         setup_sql = self.build_param(setup_sql)
         teardown_sql = self.build_param(teardown_sql)
 
-        params = eval(params) if params else params
-        headers = eval(headers) if headers else headers
-        cookies = eval(cookies) if cookies else cookies
-        body = eval(body) if body else body
-        file = eval(file) if file else file
+        params = literal_eval(params) if params else params
+        headers = literal_eval(headers) if headers else headers
+        cookies = literal_eval(cookies) if cookies else cookies
+        body = literal_eval(body) if body else body
+        file = literal_eval(file) if file else file
 
         db_connect = None
         redis_db_connect = None
@@ -164,11 +154,11 @@ class Test(unittest.TestCase):
 
         # 判断接口请求类型
         if method.upper() == 'GET':
-            res = self.request.get_request(url=url,params=params,headers=headers,cookies=cookies)
+            res = Request.get_request(url=url,params=params,headers=headers,cookies=cookies)
         elif method.upper() == 'POST':
-            res = self.request.post_request(url=url,headers=headers,cookies=cookies,params=params,json=body)
+            res = Request.post_request(url=url,headers=headers,cookies=cookies,params=params,json=body)
         if method.upper() == 'UPLOAD':
-            res = self.request.upload_request(url=url,headers=headers,cookies=cookies,params=params,data=body,files=file)
+            res = Request.upload_request(url=url,headers=headers,cookies=cookies,params=params,data=body,files=file)
         else:
             #待扩充，如PUT,DELETE方法
             pass
@@ -178,7 +168,7 @@ class Test(unittest.TestCase):
                 # 切割字符串 如 key=$.data
                 key = save.split("=")[0]
                 jsp = save.split("=")[1]
-                self.save_date(res.json(), key, jsp)
+                self.save_data(res.json(), key, jsp)
         if verify:
             # 遍历verify:
             for ver in verify.split(";"):
@@ -187,12 +177,15 @@ class Test(unittest.TestCase):
                 if expr.startswith("$."):
                     actual = jsonpath.jsonpath(res.json(), expr)[0]
                 else:
-                    actual = re.findall(expr,res.text)[0]
-                expect = ver.split("=")[1]
+                    try:
+                        actual = re.findall(expr,res.text)[0]
+                    except IndexError as ie:
+                        actual = None
+                expect = ver.split("=")[1] if "=" in ver else ver
                 actual = str(actual).strip() if actual else actual
                 expect = str(expect).strip() if expect else expect
-                self.request.assertEquals(actual, expect)
-                # self.assertEqual(actual, expect)
+                Request.assertEquals(actual, expect)
+        Request.assertEquals(res.status_code,200)
 
         if db_connect:
             # 执行teardown_sql
@@ -208,3 +201,5 @@ class Test(unittest.TestCase):
 
 
 
+if __name__ == '__main__':
+    pytest.main(['-s','test_case.py','-W','ignore:Module already imported:pytest.PytestWarning'])
