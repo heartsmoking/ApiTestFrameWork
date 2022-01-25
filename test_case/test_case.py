@@ -32,7 +32,7 @@ class Test():
     #识别函数助手
     FUNC_EXPR = r'__.*?\(.*?\)'
 
-    def save_data(self,source,key,jexpr):
+    def save_data(self,source,key,expr):
         '''
         提取参数并保存至全局变量池
         :param source: 目标字符串
@@ -40,7 +40,17 @@ class Test():
         :param jexpr: jsonpath表达式
         :return:
         '''
-        value = jsonpath.jsonpath(source,jexpr)[0]
+        value = None
+        if expr.startswith("$."):
+            try:
+                value = jsonpath.jsonpath(source.json(), expr)[0]
+            except RequestsJSONDecodeError as e:
+                logger.warning(e)
+        else:
+            try:
+                value = re.findall(expr, source.text)[0]
+            except IndexError as ie:
+                logger.warning(ie)
         self.saves[key] = value
         logger.info("保存 {}=>{} 到全局变量池".format(key,value))
 
@@ -149,11 +159,11 @@ class Test():
         # else:
         #     pass
 
-        if db_connect:
-            self.execute_setup_sql(db_connect,setup_sql)
-        if redis_db_connect:
-            # 执行teardown_redis操作
-            self.execute_redis_get(redis_db_connect,setup_sql)
+        # if db_connect:
+        #     self.execute_setup_sql(db_connect,setup_sql)
+        # if redis_db_connect:
+        #     # 执行teardown_redis操作
+        #     self.execute_redis_get(redis_db_connect,setup_sql)
 
         # 判断接口请求类型
         if method.upper() == 'GET':
@@ -169,9 +179,9 @@ class Test():
             # 遍历saves
             for save in saves.split(";"):
                 # 切割字符串 如 key=$.data
-                key = save.split("=")[0]
-                jsp = save.split("=")[1]
-                self.save_data(res.json(), key, jsp)
+                key = save.split("=",1)[0]
+                expr = save.split("=",1)[1]
+                self.save_data(res, key, expr)
         if verify:
             # 遍历verify:
             for ver in verify.split(";"):
