@@ -8,9 +8,9 @@
 
 ## 技术栈
 - requests
-- unittest
 - pytest
 - pytest-html
+- pytest-check
 - xlrd
 - logging
 - 函数助手
@@ -18,9 +18,9 @@
 
 ## 环境部署
 - 解压压缩包，使用pycharm打开项目文件
-- 进入**File - Settings - Project - Project Interpreter**,选择项目中的 **ApiTestFrameWork/venv** 作为虚拟环境,若无法使用,可以尝试新增虚拟环境后,在控制台cd到**venv/Scripts**下,使用命令**pip install -r requirements.txt**文件所在的绝对路径（在项目根目录）,一条命令安装好所有依赖环境,你要做的就是慢慢等它装好
+- 可以尝试新增虚拟环境后,在控制台cd到**venv/Scripts**下,使用命令**pip install -r requirements.txt**文件所在的绝对路径（在项目根目录）,一条命令安装好所有依赖环境,你要做的就是慢慢等它装好
 - 验证环境是否安装完毕
-- **File - Settings - Tools - Python Integrated Tools - Default Test Runner**选择**py.test**
+- **File - Settings - Tools - Python Integrated Tools - Default Test Runner**选择**pytest**
 - 执行**runCase.py**,观察结果是否成功,excel中有一条访问百度的用例,可以看看执行结果百度是否访问成功
 - 查看report下是否有测试报告生成
 
@@ -41,27 +41,30 @@
 - **description**:用例描述
 - **url**:接口地址
 - **method**:请求方式(目前只支持GET,POST)
-- **headers**:请求头,格式为 {"key","value"}
+- **headers**:请求头,格式为 {"key":"value"}
 - **cookies**:Cookies就是Cookies啦,格式为 {"key":"value"}
 - **params**:请求参数,注意是参数而不是请求体,类似url后拼接的?key=value&key=value,格式为 {"key":"value"}
 - **body**:请求体,格式为 {"key":"value"}
-- **file**:请求文件,格式为 {"key":"文件名称"}  注意此时文件需放到框架的files目录下才能读取
+- **file**:请求文件,格式为 {"key":"文件名称"}  注意此时文件需放到框架的files目录下才能读取,目前只支持一个文件
 - **verify**:断言,格式为  JSONPATH=预期结果 
 - **saves**:关联,格式为 自定义key=JSONPATH
+##### db这部分功能还没实现
 - **dbtype**:数据库类型,目前支持mysql/redis
 - **db**:数据库名称
 - **setup_sql**:前置数据库语句(在用例执行前执行),若为mysql,直接写sql即可,可支持执行多条sql,用分号隔开,若是查询语句则会将查询的字段存储到公共变量池;若数据库类型为redis,则写形如key1;key2;key3,会进行redis查询并储存变量
 - **teardown_sql**:后置数据库语句(在用例执行后执行),用法如上
 
-
 ## 关联详解
-- 公共参数池:意思就是你可以存储接口的响应值到参数池中,以便后续接口使用
-- 如何将响应字段存到参数池:在EXCEL中saves列,使用格式形如 **key=JSONPATH**  填写,支持多字段存储,使用英文分号隔开 , 举栗子:**id=$.object.id;code=$.code**
+- 公共参数:可以存储接口的响应值到公共参数中,以便后续接口使用
+- 如何将响应字段存到参数池:在EXCEL中saves列,使用格式形如 **key=JSONPATH** 填写,
+支持多字段存储,使用英文分号隔开,eg.:**id=$.object.id;code=$.code**
 学过jmeter的朋友们应该知道,类似里面的jsonpath提取器
-- 下个接口如何使用已经存储的参数:在下个接口入参中使用形如  **${key}** 的格式,提取参数池中的key对应的value即可,当然你必须保证前面的用例已经存储过该key
-
+- 下个接口如何使用已经存储的参数:在下个接口入参中使用形如 **${key}** 的格式,
+提取参数池中的key对应的value即可,当然你必须保证前面的用例已经存储过该key;
+注意，如果需要传递的是字符串，需要显式加上引号，例如 {"batch":"${msg}"}；如果是数字则不需要
 ## 断言详解
-- 在verify中填写形如  **JSONPATH=预期结果** ,框架会根据该JSONPATH从响应JSON中提取目标字段,和预期结果进行比对,同样支持多断言,举栗子:**$.msg=操作成功;$.code=100000**
+- 在verify中填写形如  **JSONPATH=预期结果** ,框架会根据该JSONPATH从响应JSON中提取目标字段,和预期结果进行比对,同样支持多断言,eg.:**$.msg=操作成功;$.code=100000**
+- 多重断言采用的pytest-check包，一个断言失败仍会执行后续的断言
 
 ## 函数助手详解
 - 说明:函数助手是来自Jmeter的一个概念,有了它意味着你能在EXCEL中使用某些函数动态的生成某些数据,如随机定长字符,格式化日期,UUID,正则表达式等等
@@ -80,8 +83,16 @@
 - 参数为字符串的记得加**引号！！！** 中英文引号别搞混啦，统一用英文引号，就像写代码一样
 
 ## 待优化
-- 用例控制器 Y/N
+- 很多异常处理还待优化
+- 断言中需要传参的还没有处理
+- 现在断言只能判断等于，其他的还有待实现
+- 数据库相关的还没有实现
 - 用例集相互隔离,若其中一条用例执行失败,则不会执行后续用例,一个流程视为一个用例集
-- excel表中多个Sheet批量读取
+- excel表中多个Sheet批量读取(可以通过sheet页控制用例集，相对来说可能容易实现)
+- 测试报告邮件发送
+- 测试报告用更美观的allure改造
 - jenkins集成
-- 更多后续。。如flask可视化展示页面开发
+- 更多后续...可视化展示页面开发
+
+### 注意事项
+1. **xlrd** 在项目中用到的1.2.0版本可以处理xlsx文件，如果已经升级了新版本则无法处理了，可以用**openpyxl**处理，或者用**xlrd==1.2.0**

@@ -2,7 +2,7 @@
 #coding=utf-8
 """
 @project : ApiTestFrameWork
-@author  : djcps
+@author  : ZhaoFeng
 #@file   : mysql_operate.py
 #@ide    : PyCharm
 #@time   : 2019-06-18 18:43:48
