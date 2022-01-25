@@ -2,19 +2,20 @@
 # coding=utf-8
 """
 @project : bitest
-@author  : djcps
+@author  : ZhaoFeng
 #@file   : testBase.py
 #@ide    : PyCharm
 #@time   : 2019-05-05 10:23:02
 """
 import requests
 from json import dumps
+import os
+import pytest_check as check
 from core.logger import Logger
+from conf.settings import BASE_PATH
+# 禁用安全请求警告
 # from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from urllib3.exceptions import InsecureRequestWarning
-
-# 禁用安全请求警告
-
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 logger = Logger().logger
@@ -70,7 +71,9 @@ class BaseTest(requests.Session):
         try:
 
             filename = list(files.keys())[0]
-            filepath = list(files.values())[0]
+            filepath = os.path.join(BASE_PATH, list(files.values())[0])
+            if not os.path.isfile(filepath):
+                raise FileNotFoundError(f"{filepath}:文件不存在")
             with open(filepath, 'rb') as file:
                 files["{}".format(filename)] = file
                 res = self.request('POST', url, headers=headers, params=params, data=data,
@@ -90,12 +93,12 @@ class BaseTest(requests.Session):
         :param expected: 预期值
         :return:
         """
-        try:
-            assert actual == expected
+        msg = "断言失败,实际值：'{}'  不等于 预期值：'{}' ".format(actual, expected)
+        ret = check.equal(actual, expected, msg)
+        if ret:
             logger.info("断言成功,实际值：'{}'  等于 预期值：'{}' ".format(actual, expected))
-        except AssertionError as e:
-            logger.error("断言失败,实际值：'{}'  不等于 预期值：'{}' ".format(actual, expected))
-            raise AssertionError
+        else:
+            logger.error(msg)
 
     def assertTrue(self, actual):
         """

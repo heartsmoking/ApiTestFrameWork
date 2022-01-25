@@ -9,8 +9,16 @@ BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TESTCASE_PATH = os.path.join(BASE_PATH, 'test_case')
 # 定义测报告的路径
 REPORT_PATH = os.path.join(BASE_PATH, 'report/')
+# 定义上传文件路径
+FILE_PATH = os.path.join(BASE_PATH, 'files')
+if not os.path.exists(FILE_PATH):
+    os.mkdir(FILE_PATH)
 # 定义日志文件的路径
-LOG_PATH = os.path.join(BASE_PATH, 'log/log.txt')
+LOG_PATH = os.path.join(BASE_PATH, 'logs')
+if not os.path.exists(LOG_PATH):
+    os.mkdir(LOG_PATH)
+# 日志级别 debug，info，warning，error，crit
+LOG_LV = 'debug'
 
 # mysql数据库的连接信息
 DB_NAME = 'root'

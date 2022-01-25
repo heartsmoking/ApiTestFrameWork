@@ -1,8 +1,8 @@
 #!/user/bin/env python
 # coding=utf-8
 """
-@project : my_rf
-@author  : djcps
+@project : ApiTestFrameWork
+@author  : ZhaoFeng
 #@file   : readExcel.py
 #@ide    : PyCharm
 #@time   : 2019-05-28 11:10:44
@@ -44,4 +44,5 @@ def read_excel(excel_path=BASE_PATH + "/conf/case.xlsx", sheet_name="Sheet1"):
     for row in all_rows:
         lis = dict(zip(first_row, row))
         rows_dict.append(lis)
-    return rows_dict
+    # return rows_dict
+    return all_rows
