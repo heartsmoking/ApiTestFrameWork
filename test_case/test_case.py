@@ -17,9 +17,9 @@ import jsonpath
 from core.functions import *
 from db_operate.mysql_operate import MySQLOperate
 from db_operate.redis_operate import RedisOperate
-# 移除InsecureRequestWarning
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+# # 移除InsecureRequestWarning
+# from requests.packages.urllib3.exceptions import InsecureRequestWarning
+# requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class Test():
@@ -117,11 +117,14 @@ class Test():
     # def setup_class(self):
     #     self.request = BaseTest()
 
-    param_names = "descrption,url,method,headers,cookies,params,body,file,verify,saves,dbtype,db,setup_sql,teardown_sql"
+    param_names = "description,url,method,headers,cookies,params,body,file,verify,saves,is_skip,dbtype,db,setup_sql,teardown_sql"
     names = [x[0] for x in api_data]
     @pytest.mark.parametrize(param_names,api_data,ids=names)
-    def test_(self,descrption,url,method,headers,cookies,params,body,file,verify,saves,dbtype,db,setup_sql,teardown_sql,Request):
-        logger.info("用例描述====>"+descrption)
+    def test_(self,description,url,method,headers,cookies,params,body,file,verify,saves,is_skip,dbtype,db,setup_sql,teardown_sql,Request):
+        logger.info("用例描述====>"+description)
+        if is_skip == 'Y':
+            pytest.skip(f"跳过该用例：{description}")
+            logger.info("跳过用例====>" + description)
         url = self.build_param(url)
         headers = self.build_param(headers)
         params = self.build_param(params)
