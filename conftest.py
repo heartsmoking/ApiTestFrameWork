@@ -7,11 +7,11 @@ Email:
 
 Date: 2021/4/15 9:24
 """
-import time
+from datetime import datetime
 import pytest
 from py.xml import html
 
-runtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
 # 显示__doc__内容
 # def pytest_itemcollected(item):
 #     par = item.parent.obj
@@ -45,20 +45,39 @@ def pytest_html_results_table_row(report, cells):
     cells.pop(3)
     cells.insert(3, html.td(report.URL))
     cells.insert(4, html.td(report.assertions))
-    cells.insert(-2, html.td(runtime, class_='col-time'))
+    cells.insert(-2, html.td(report.exec_time, class_='col-time'))
     cells.pop()
 
 
 def pytest_html_results_table_html(report, data):
     """去掉默认的日志捕获，只要异常说明"""
+    # 这个没找到好的办法，自从吧pytest和pytest-html升级之后报告中输出的日志就变多了，
+    # 以前只有Captured log call这一部分来着，现在没找到好办法解决,现在这个办法只是乱搞
+    tt =  data[0]
+    stt = '------------------------------Captured'
+    slog = 'Captured log call'
+    slog_n = -3
+    for i in range(len(tt)):
+        if isinstance(tt[i], str):
+            if slog in tt[i]:
+                slog_n = i
+                break
+
+    for i in range(len(tt)):
+        if isinstance(tt[i], str):
+            if stt in tt[i]:
+                del tt[i:slog_n]
+                break
     del data[:]
     if report.passed:
+
         data.append(html.div("No log output captured.", class_="empty log"))
     else:
-        # failtext = [x for x in report.longreprtext.split('\n')]
-        # fail_p = [html.p(p) for p in failtext]
-        fail_p = report.longreprtext
-        data.append(html.div(fail_p, class_="failed log"))
+    #     # failtext = [x for x in report.longreprtext.split('\n')]
+    #     # fail_p = report.longreprtext
+    #     fail_p = '<br/>'.join(qq)
+    #     data.append(html.div(fail_p, class_="failed log"))
+        data.append(tt)
 
 @pytest.mark.hookwrapper
 def pytest_runtest_makereport(item, call):
@@ -66,10 +85,17 @@ def pytest_runtest_makereport(item, call):
     report = outcome.get_result()
     # 设置执行时间的显示格式
     # setattr(report, "duration_formatter", "%H:%M:%S.%f")
-    # pytest 的变量
+
     report.description = str(item.funcargs.get('description', None))
     report.URL = str(item.funcargs.get('url', None))
     report.assertions = str(item.funcargs.get('verify', None))
+    runtime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    report.exec_time = runtime
+
+
+    # 获取文档描述字符串，pytest和unittest用例获取方式不一样
+    # pytest 的变量
+    # report.description = str(item.function.__doc__)
     # unittest 的变量
     # report.description = item._testcase._testMethodDoc
     # report.nodeid = report.nodeid.encode("utf-8").decode("unicode_escape")  # 设置编码显示中文

@@ -11,15 +11,17 @@
 import pytest
 from ast import literal_eval
 from typing import Any, Union
+import time
+import random
+import jsonpath
 from core.readExcel import *
 from core.testBase import *
-import jsonpath
 from core.functions import *
 from db_operate.mysql_operate import MySQLOperate
 from db_operate.redis_operate import RedisOperate
 # # 移除InsecureRequestWarning
-# from requests.packages.urllib3.exceptions import InsecureRequestWarning
-# requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class Test():
@@ -131,6 +133,8 @@ class Test():
     names = [x[0] for x in api_data]
     @pytest.mark.parametrize(param_names,api_data,ids=names)
     def test_(self,description,url,method,headers,cookies,params,body,file,verify,saves,is_skip,dbtype,db,setup_sql,teardown_sql,Request):
+        _runtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        time.sleep(random.randint(1,5))
         logger.info("用例描述====>"+description)
         if is_skip == 'Y':
             logger.info("跳过用例====>" + description)
