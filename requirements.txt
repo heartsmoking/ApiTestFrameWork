@@ -8,11 +8,10 @@ pycparser==2.19
 PyMySQL==0.9.3
 pypng==0.0.19
 pytest==6.2.3
-pytest-allure-adaptor==1.7.10
 pytest_check==1.0.4
 pytest-html==3.1.1
 pytest-metadata==1.8.0
-pytest-rerunfailures==5.0
+pytest-rerunfailures==10.2
 pytz==2018.9
 PyYAML==3.13
 pyzmq==18.0.1
